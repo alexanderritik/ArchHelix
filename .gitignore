@@ -1,0 +1,16 @@
+# Binaries
+archhelix
+arch-intel
+
+# Node modules
+node_modules/
+ui/node_modules/
+.env
+
+# Build artifacts
+ui/dist/
+ui/build/
+
+# Go
+go.sum
+*.coverprofile

@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-flow__node.react-flow__node-custom,
+.react-flow__node.react-flow__node-group {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.react-flow__node.react-flow__node-group {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}

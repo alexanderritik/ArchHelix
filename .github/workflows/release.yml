@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build UI
+        run: |
+          cd ui
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Build Binaries
+        run: |
+          # Build for macOS (Intel)
+          GOOS=darwin GOARCH=amd64 go build -o archhelix-darwin-amd64 .
+          # Build for macOS (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -o archhelix-darwin-arm64 .
+          # Build for Linux (AMD64)
+          GOOS=linux GOARCH=amd64 go build -o archhelix-linux-amd64 .
+          # Build for Linux (ARM64)
+          GOOS=linux GOARCH=arm64 go build -o archhelix-linux-arm64 .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            archhelix-darwin-amd64
+            archhelix-darwin-arm64
+            archhelix-linux-amd64
+            archhelix-linux-arm64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
