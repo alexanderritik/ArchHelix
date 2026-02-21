@@ -12,5 +12,4 @@ ui/dist/
 ui/build/
 
 # Go
-go.sum
 *.coverprofile
