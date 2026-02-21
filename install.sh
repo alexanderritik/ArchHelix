@@ -6,8 +6,10 @@ BIN_NAME="archhelix"
 INSTALL_DIR="/usr/local/bin"
 
 if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root to install to /usr/local/bin (e.g. sudo bash ...)"
-  exit 1
+  # If we're not root, try using sudo for the final install commands later
+  USE_SUDO="sudo"
+else
+  USE_SUDO=""
 fi
 
 OS="$(uname -s)"
@@ -35,8 +37,8 @@ ASSET_NAME="${BIN_NAME}-${OS_NAME}-${ARCH_NAME}"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/${ASSET_NAME}"
 
 echo "Downloading ${ASSET_NAME} from ${TAG}..."
-curl -sL "$DOWNLOAD_URL" -o "${INSTALL_DIR}/${BIN_NAME}"
+$USE_SUDO curl -sL "$DOWNLOAD_URL" -o "${INSTALL_DIR}/${BIN_NAME}"
 
-chmod +x "${INSTALL_DIR}/${BIN_NAME}"
+$USE_SUDO chmod +x "${INSTALL_DIR}/${BIN_NAME}"
 
 echo "Done! You can now run '${BIN_NAME}'"
