@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="ritiksrivastava/archhelix"
+REPO="alexanderritik/ArchHelix"
 BIN_NAME="archhelix"
 INSTALL_DIR="/usr/local/bin"
 

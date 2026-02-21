@@ -14,14 +14,14 @@ You can install ArchHelix easily through a single curl command.
 
 ### macOS and Linux
 ```bash
-curl -sL https://raw.githubusercontent.com/ritiksrivastava/archhelix/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/alexanderritik/ArchHelix/main/install.sh | bash
 ```
 
 Alternatively, you can build from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/ritiksrivastava/archhelix
+git clone https://github.com/alexanderritik/ArchHelix
 cd archhelix
 
 # Build the Frontend Map
