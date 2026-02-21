@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import EditorJS from "@editorjs/editorjs";
 import Header from '@editorjs/header';
 import Embed from '@editorjs/embed'
@@ -14,7 +14,7 @@ import CheckList from '@editorjs/checklist'
 import ColorPlugin from 'editorjs-text-color-plugin'
 import html2pdf from "html2pdf.js";
 import { Box, Button, Card, Heading, Text } from 'grommet';
-import { useSelector, useDispatch} from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { closeEditor } from '../store/slice/settingSlice'
 import { Close } from "grommet-icons";
 
@@ -81,9 +81,9 @@ export const NoteEditor = () => {
 
   // console.log('.... NoteEditor.js is callled')
   const ejInstance = useRef(null);
-  
 
-  const initEditor = () => {
+
+  const initEditor = useCallback(() => {
     const editor = new EditorJS({
       holder: `editorjs-${uniqueId}`,
       onReady: () => {
@@ -97,7 +97,7 @@ export const NoteEditor = () => {
       },
       tools: TOOLS,
     });
-  };
+  }, [uniqueId]);
 
   // This will run only once
   useEffect(() => {
@@ -109,7 +109,7 @@ export const NoteEditor = () => {
       ejInstance?.current?.destroy();
       ejInstance.current = null;
     };
-  }, []);
+  }, [initEditor]);
 
   const downloadAsPDF = () => {
     // console.log('downlaod a pdf')
@@ -124,28 +124,28 @@ export const NoteEditor = () => {
     html2pdf().from(editorContent).set(opt).save();
   };
 
-  const onClickSplit=()=>{
-    dispatch(closeEditor());       
-}
+  const onClickSplit = () => {
+    dispatch(closeEditor());
+  }
 
-  return(
-  <>
-  <Box align="center" gap='small' direction='row' justify='between'>
-    <Heading level="4" margin="small">Notes</Heading>
-    <Box direction="row" gap="small" margin='small'>
-      <Card onClick={downloadAsPDF} elevation={false} pad="xsmall" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <Text weight='bold'  color={isHover ? '#444' : '#666e78'}  >Download</Text>
-      </Card>
-    <Button onClick={onClickSplit}><Close/></Button>
-    </Box>
-    
-  </Box>
+  return (
+    <>
+      <Box align="center" gap='small' direction='row' justify='between'>
+        <Heading level="4" margin="small">Notes</Heading>
+        <Box direction="row" gap="small" margin='small'>
+          <Card onClick={downloadAsPDF} elevation={false} pad="xsmall" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+            <Text weight='bold' color={isHover ? '#444' : '#666e78'}  >Download</Text>
+          </Card>
+          <Button onClick={onClickSplit}><Close /></Button>
+        </Box>
 
-    <Box  pad={{'left':'large', 'right':'small'}}>
-      <div id={`editorjs-${uniqueId}`} />
-    </Box>
-    {/* <div className="pl-4 pr-2 h-full max-h-full overflow-y-auto" id="editorjs" /> */}
-  </>
+      </Box>
+
+      <Box pad={{ 'left': 'large', 'right': 'small' }}>
+        <div id={`editorjs-${uniqueId}`} />
+      </Box>
+      {/* <div className="pl-4 pr-2 h-full max-h-full overflow-y-auto" id="editorjs" /> */}
+    </>
   )
 }
 

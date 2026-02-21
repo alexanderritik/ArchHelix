@@ -100,7 +100,7 @@ export const CodeEditor = () => {
         // if (githubSelectedFile.file) {
         fetchCodeAndDetectLanguage();
         // }
-    }, [githubSelectedFile.file]);
+    }, [githubSelectedFile.file, githubDetail.owner, githubDetail.repo]);
 
     const editorDidMount = (editor) => {
         editor.focus();

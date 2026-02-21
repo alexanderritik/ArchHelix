@@ -1,4 +1,4 @@
-import { Box, Card, Text } from 'grommet';
+import { Text } from 'grommet';
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useDispatch, useSelector } from "react-redux"
@@ -56,7 +56,7 @@ const getFileIcon = (filename: string) => {
 const CustomNode = (data: any) => {
   const dispatch = useDispatch();
   const editorState: IsettingState = useSelector((state: any) => state.settings as IsettingState);
-  const rootFolderAttached = useSelector((state: any) => state.githubDetail.root);
+
 
   let border = true;
   if (data.data.border === undefined) {

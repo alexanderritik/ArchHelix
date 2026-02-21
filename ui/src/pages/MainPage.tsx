@@ -12,7 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useSelector } from 'react-redux';
-import { Card, RangeInput } from 'grommet';
+
 
 import CustomNode from '../utils/nodes/customNode';
 import { NoteEditor } from '../editor/notesEditor';
@@ -20,7 +20,7 @@ import { CodeEditor } from '../editor/codeEditor';
 import ProjectStructure from '../utils/projectStructure';
 import Draggable from '../utils/useDrag';
 import CustomBox from '../utils/nodes/customBox';
-import { graphNodeDimension } from '../utils/graphNodeDimensions';
+
 import { IsettingState } from '../store/slice/settingSlice';
 import { getUpdatedNodesAndEdges } from '../utils/graphUtils';
 
@@ -59,7 +59,7 @@ const MainPage = () => {
     const showSidebar = editorState.code || editorState.note;
     const nodesAndEdges = useSelector((state: any) => state.nodesAndEdges);
     const openFolderState = useSelector((state: any) => state.openFolder);
-    const nodeHoverState = useSelector((state: any) => state.nodeHover);
+
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
