@@ -6,10 +6,37 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    name: Build & Release
-    runs-on: ubuntu-latest
-    
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target_os: linux
+            target_arch: amd64
+            binary_name: archhelix-linux-amd64
+            cgo_vars: "CGO_ENABLED=1"
+            setup_cmd: ""
+          - os: ubuntu-latest
+            target_os: linux
+            target_arch: arm64
+            binary_name: archhelix-linux-arm64
+            cgo_vars: "CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ CGO_ENABLED=1"
+            setup_cmd: "sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu"
+          - os: macos-latest
+            target_os: darwin
+            target_arch: amd64
+            binary_name: archhelix-darwin-amd64
+            cgo_vars: "CGO_ENABLED=1"
+            setup_cmd: ""
+          - os: macos-latest
+            target_os: darwin
+            target_arch: arm64
+            binary_name: archhelix-darwin-arm64
+            cgo_vars: "CGO_ENABLED=1"
+            setup_cmd: ""
+            
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,26 +56,36 @@ jobs:
           cd ui
           npm ci
           npm run build
-          cd ..
 
-      - name: Build Binaries
+      - name: Setup cross-compiler
+        if: matrix.setup_cmd != ''
+        run: ${{ matrix.setup_cmd }}
+
+      - name: Build Binary
         run: |
-          # Build for macOS (Intel)
-          GOOS=darwin GOARCH=amd64 go build -o archhelix-darwin-amd64 .
-          # Build for macOS (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -o archhelix-darwin-arm64 .
-          # Build for Linux (AMD64)
-          GOOS=linux GOARCH=amd64 go build -o archhelix-linux-amd64 .
-          # Build for Linux (ARM64)
-          GOOS=linux GOARCH=arm64 go build -o archhelix-linux-arm64 .
+          ${{ matrix.cgo_vars }} GOOS=${{ matrix.target_os }} GOARCH=${{ matrix.target_arch }} go build -o ${{ matrix.binary_name }} .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: ${{ matrix.binary_name }}
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: archhelix-*
+          merge-multiple: true
+          path: ./
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            archhelix-darwin-amd64
-            archhelix-darwin-arm64
-            archhelix-linux-amd64
-            archhelix-linux-arm64
+          files: archhelix-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
