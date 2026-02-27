@@ -9,9 +9,12 @@ import ReactFlow, {
     Edge,
     getOutgoers,
     getIncomers,
+    MiniMap,
+    Controls,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setSearchedNodeId } from '../store/slice/searchSlice';
 
 
 import CustomNode from '../utils/nodes/customNode';
@@ -59,6 +62,8 @@ const MainPage = () => {
     const showSidebar = editorState.code || editorState.note;
     const nodesAndEdges = useSelector((state: any) => state.nodesAndEdges);
     const openFolderState = useSelector((state: any) => state.openFolder);
+    const searchedNodeId = useSelector((state: any) => state.search?.searchedNodeId);
+    const dispatch = useDispatch();
 
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -70,18 +75,94 @@ const MainPage = () => {
 
     const sidebarRef = useRef<HTMLDivElement>(null);
 
+    // Unified effect to handle graph data updates from Redux
     useEffect(() => {
         const collapsedFoldersMap = openFolderState.folders || {};
+        const { nodes: freshNodes, edges: freshEdges } = getUpdatedNodesAndEdges(collapsedFoldersMap);
 
-        // Use the centralized dynamic layout generator on every toggle
-        const { nodes: updatedNodes, edges: updatedEdges } = getUpdatedNodesAndEdges(collapsedFoldersMap);
+        if (freshNodes.length === 0) return;
 
-        if (updatedNodes.length > 0) {
+        if (searchedNodeId) {
+            const node = freshNodes.find(n => n.id === searchedNodeId);
+            if (!node || node.type === "group") {
+                setNodes(freshNodes);
+                setEdges(freshEdges);
+                setIsolatedNodeId(null);
+                return;
+            }
+
+            const allIncomers = getIncomers(node, freshNodes, freshEdges);
+            const allOutgoers = getOutgoers(node, freshNodes, freshEdges);
+
+            const incomersSet = new Set(allIncomers.map(n => n.id));
+            const outgoersSet = new Set(allOutgoers.map(n => n.id));
+
+            const incomerAncestors = new Set<string>();
+            const outgoerAncestors = new Set<string>();
+            const hoveredAncestors = new Set<string>();
+
+            const addAncestors = (nId: string, targetSet: Set<string>) => {
+                const n = freshNodes.find(x => x.id === nId);
+                if (n && n.parentNode) {
+                    targetSet.add(n.parentNode);
+                    addAncestors(n.parentNode, targetSet);
+                }
+            };
+
+            addAncestors(node.id, hoveredAncestors);
+            allIncomers.forEach(n => addAncestors(n.id, incomerAncestors));
+            allOutgoers.forEach(n => addAncestors(n.id, outgoerAncestors));
+
+            const updatedNodes = freshNodes.map((elem) => {
+                const isHovered = elem.id === node.id;
+                const isHoveredAncestor = hoveredAncestors.has(elem.id);
+                const isIncomer = incomersSet.has(elem.id) || incomerAncestors.has(elem.id);
+                const isOutgoer = outgoersSet.has(elem.id) || outgoerAncestors.has(elem.id);
+
+                const highlight = isHovered || isHoveredAncestor || isIncomer || isOutgoer;
+
+                let borderColor;
+                if (isIncomer) borderColor = 'red';
+                if (isOutgoer) borderColor = 'green';
+
+                return {
+                    ...elem,
+                    hidden: !highlight,
+                    data: {
+                        ...elem.data,
+                        border: highlight && !isHovered && !isHoveredAncestor ? borderColor : undefined,
+                    },
+                    style: {
+                        ...elem.style,
+                        opacity: 1,
+                    },
+                };
+            });
+
+            const updatedEdges = freshEdges.map((edge) => {
+                const isActive = (edge.source === node.id && outgoersSet.has(edge.target)) ||
+                    (edge.target === node.id && incomersSet.has(edge.source));
+
+                return {
+                    ...edge,
+                    hidden: !isActive || edge.data?.originalHidden,
+                    animated: isActive,
+                    style: {
+                        ...edge.style,
+                        opacity: 1,
+                    }
+                };
+            });
+
             setNodes(updatedNodes);
             setEdges(updatedEdges);
+            setIsolatedNodeId(searchedNodeId);
+        } else {
+            setNodes(freshNodes);
+            setEdges(freshEdges);
             setIsolatedNodeId(null);
         }
-    }, [openFolderState.folders, setNodes, setEdges]);
+    }, [openFolderState.folders, searchedNodeId, setNodes, setEdges]);
 
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
@@ -212,6 +293,7 @@ const MainPage = () => {
 
     const onPaneClick = useCallback(() => {
         setIsolatedNodeId(null);
+        dispatch(setSearchedNodeId(null));
         setNodes(nds => nds.map(n => ({
             ...n,
             hidden: false,
@@ -224,81 +306,15 @@ const MainPage = () => {
             animated: false,
             style: { ...e.style, opacity: 1 }
         })));
-    }, [setNodes, setEdges]);
+    }, [setNodes, setEdges, dispatch]);
 
     const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-        if (isolatedNodeId || node.type === "group") {
+        if (searchedNodeId === node.id || node.type === "group") {
             return;
         }
 
-        setIsolatedNodeId(node.id);
-
-        const allIncomers = getIncomers(node, nodes, edges);
-        const allOutgoers = getOutgoers(node, nodes, edges);
-
-        const incomersSet = new Set(allIncomers.map(n => n.id));
-        const outgoersSet = new Set(allOutgoers.map(n => n.id));
-
-        const incomerAncestors = new Set<string>();
-        const outgoerAncestors = new Set<string>();
-        const hoveredAncestors = new Set<string>();
-
-        const addAncestors = (nId: string, targetSet: Set<string>) => {
-            const n = nodes.find(x => x.id === nId);
-            if (n && n.parentNode) {
-                targetSet.add(n.parentNode);
-                addAncestors(n.parentNode, targetSet);
-            }
-        };
-
-        addAncestors(node.id, hoveredAncestors);
-        allIncomers.forEach(n => addAncestors(n.id, incomerAncestors));
-        allOutgoers.forEach(n => addAncestors(n.id, outgoerAncestors));
-
-        const updatedNodes = nodes.map((elem) => {
-            const isHovered = elem.id === node.id;
-            const isHoveredAncestor = hoveredAncestors.has(elem.id);
-            const isIncomer = incomersSet.has(elem.id) || incomerAncestors.has(elem.id);
-            const isOutgoer = outgoersSet.has(elem.id) || outgoerAncestors.has(elem.id);
-
-            const highlight = isHovered || isHoveredAncestor || isIncomer || isOutgoer;
-
-            let borderColor;
-            if (isIncomer) borderColor = 'red';
-            if (isOutgoer) borderColor = 'green';
-
-            return {
-                ...elem,
-                hidden: !highlight,
-                data: {
-                    ...elem.data,
-                    border: highlight && !isHovered && !isHoveredAncestor ? borderColor : undefined,
-                },
-                style: {
-                    ...elem.style,
-                    opacity: 1,
-                },
-            };
-        });
-
-        const updatedEdges = edges.map((edge) => {
-            const isActive = (edge.source === node.id && outgoersSet.has(edge.target)) ||
-                (edge.target === node.id && incomersSet.has(edge.source));
-
-            return {
-                ...edge,
-                hidden: !isActive || edge.data?.originalHidden,
-                animated: isActive,
-                style: {
-                    ...edge.style,
-                    opacity: 1,
-                }
-            };
-        });
-
-        setNodes(updatedNodes);
-        setEdges(updatedEdges);
-    }, [nodes, edges, isolatedNodeId, setNodes, setEdges]);
+        dispatch(setSearchedNodeId(node.id));
+    }, [searchedNodeId, dispatch]);
 
     return (
         <ReactFlowProvider>
@@ -328,6 +344,29 @@ const MainPage = () => {
                             onNodeMouseLeave={() => resetNodeStyles(nodes, edges)}
                         >
                             <Background variant={BackgroundVariant.Dots} />
+                            <MiniMap
+                                nodeColor={(n) => {
+                                    if (n.type === 'group') return '#f3f4f6';
+                                    return '#3b82f6';
+                                }}
+                                nodeStrokeWidth={3}
+                                maskColor="rgba(240, 240, 240, 0.4)"
+                                style={{
+                                    borderRadius: '8px',
+                                    border: '1px solid #e5e7eb',
+                                    backgroundColor: '#ffffff'
+                                }}
+                                position="bottom-right"
+                            />
+                            <Controls style={{
+                                backgroundColor: 'white',
+                                borderRadius: '8px',
+                                border: '1px solid #e5e7eb',
+                                padding: '4px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px'
+                            }} />
                         </ReactFlow>
                     </div>
                     <div

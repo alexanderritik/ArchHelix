@@ -1,21 +1,23 @@
-import {combineReducers, configureStore} from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import settingReducer from './slice/settingSlice';
 import openFolderReducer from './slice/openFolderSlice';
-import githubDetailReducer  from './slice/githubDetailSlice';
+import githubDetailReducer from './slice/githubDetailSlice';
 import githubFileReducer from './slice/githubFileSlice';
 import nodesAndEdgesReducer from './slice/nodesAndEdgesSlice';
 import nodeHoverReducer from './slice/nodeHoverSlice';
+import searchReducer from './slice/searchSlice';
 
 const rootReducer = combineReducers({
-    settings: settingReducer,
-    openFolder: openFolderReducer,
-    githubDetail: githubDetailReducer,
-    githubFile: githubFileReducer,
-    nodesAndEdges: nodesAndEdgesReducer,
-    nodeHover: nodeHoverReducer
-  });
+  settings: settingReducer,
+  openFolder: openFolderReducer,
+  githubDetail: githubDetailReducer,
+  githubFile: githubFileReducer,
+  nodesAndEdges: nodesAndEdgesReducer,
+  nodeHover: nodeHoverReducer,
+  search: searchReducer,
+});
 
-  
+
 export const store = configureStore({
-    reducer: rootReducer,
+  reducer: rootReducer,
 })

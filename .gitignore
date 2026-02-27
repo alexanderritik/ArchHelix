@@ -13,3 +13,5 @@ ui/build/
 
 # Go
 *.coverprofile
+
+codehub/*

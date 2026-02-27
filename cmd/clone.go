@@ -20,7 +20,14 @@ Example: archhelix clone https://github.com/alexanderritik/dbgraph.git`,
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := args[0]
 
-		dirName := getRepoName(repoURL)
+		repoName := getRepoName(repoURL)
+		codehubDir := "codehub"
+		dirName := filepath.Join(codehubDir, repoName)
+
+		if err := os.MkdirAll(codehubDir, 0755); err != nil {
+			fmt.Printf("Error creating %s directory: %v\n", codehubDir, err)
+			os.Exit(1)
+		}
 
 		if info, err := os.Stat(dirName); err == nil && info.IsDir() {
 			fmt.Printf("Directory '%s' already exists. Overwrite? (y/N): ", dirName)
@@ -41,7 +48,7 @@ Example: archhelix clone https://github.com/alexanderritik/dbgraph.git`,
 
 		fmt.Printf("Cloning %s...\n", repoURL)
 
-		gitCmd := exec.Command("git", "clone", repoURL)
+		gitCmd := exec.Command("git", "clone", repoURL, dirName)
 		gitCmd.Stdout = os.Stdout
 		gitCmd.Stderr = os.Stderr
 
