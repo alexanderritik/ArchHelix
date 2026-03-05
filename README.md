@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/alexanderritik/ArchHelix/main/docs/assets/logo.png" alt="ArchHelix Logo" width="150" height="auto" />
   <h1>ArchHelix</h1>
   <p><b>Understand any codebase in seconds.</b></p>
   <p>Architecture Intelligence tool that analyzes codebases and visually maps their structure, components, and dependencies.</p>
